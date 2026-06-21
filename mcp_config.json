@@ -1,0 +1,22 @@
+{
+    "mcp_servers": {
+        "filesystem": {
+            "name": "CareerPilot Filesystem MCP",
+            "version": "1.0.0",
+            "description": "Reads CV files and saves reports to disk",
+            "tools": [
+                "read_cv_from_file",
+                "save_report_to_file",
+                "list_uploaded_files"
+            ],
+            "supported_formats": ["PDF", "TXT", "MD"],
+            "uploads_directory": "uploads/",
+            "outputs_directory": "outputs/",
+            "security": {
+                "mask_pii": true,
+                "require_permission": true,
+                "allowed_extensions": [".pdf", ".txt", ".md"]
+            }
+        }
+    }
+}
