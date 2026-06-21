@@ -1,0 +1,7 @@
+google-adk
+google-genai
+streamlit
+PyPDF2
+python-dotenv
+requests
+mcp
