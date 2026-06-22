@@ -7,7 +7,7 @@ load_dotenv()
 # ── Resume Agent ─────────────────────────────────────────────────────────────
 resume_agent = Agent(
     name="Resume_Agent",
-    model="gemini-3.5-flash",
+    model="gemini-2.5-flash",
     description="Reviews a CV/resume and provides ATS score, keyword analysis, and improvement suggestions.",
     instruction="""
     You are the CareerPilot Resume Agent — an expert ATS and resume specialist.

@@ -7,7 +7,7 @@ load_dotenv()
 # ── Profile Analyzer Agent ──────────────────────────────────────────────────
 profile_analyzer = Agent(
     name="Profile_Analyzer",
-    model="gemini-3.5-flash",
+    model="gemini-2.5-flash",
     description="Analyzes a user's profile to identify strengths, weaknesses, skill gaps, and career readiness.",
     instruction="""
     You are the CareerPilot Profile Analyzer — an expert career analyst.

@@ -7,7 +7,7 @@ load_dotenv()
 # ── Project Generator Agent ──────────────────────────────────────────────────
 project_generator = Agent(
     name="Project_Generator",
-    model="gemini-3.5-flash",
+    model="gemini-2.5-flash",
     description="Suggests personalized AI/ML projects based on the user's skill gaps and career goal.",
     instruction="""
     You are the CareerPilot Project Generator — an expert at suggesting
