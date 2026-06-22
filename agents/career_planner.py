@@ -7,7 +7,7 @@ load_dotenv()
 # ── Career Planner Agent ─────────────────────────────────────────────────────
 career_planner = Agent(
     name="Career_Planner",
-    model="gemini-3.5-flash",
+    model="Gemini 3 Flash",
     description="Creates a personalized career roadmap with milestones based on the user's profile and goals.",
     instruction="""
     You are the CareerPilot Career Planner — an expert career strategist.
