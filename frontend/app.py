@@ -26,7 +26,6 @@ from agents.project_generator import project_generator
 from agents.interview_agent import interview_agent
 from agents.learning_agent import learning_agent
 from tools.security import mask_personal_data
-from tools.github_mcp import get_github_user_repos
 import PyPDF2
 import io
 
@@ -153,10 +152,20 @@ def run_agent(agent, app_name, user_id, session_id, message):
 
 def extract_pdf(f):
     try:
-        r = PyPDF2.PdfReader(io.BytesIO(f.read()))
-        return "\n".join(p.extract_text() for p in r.pages)
+        # Read all bytes first
+        file_bytes = f.read()
+        if not file_bytes:
+            return ""
+        reader = PyPDF2.PdfReader(io.BytesIO(file_bytes))
+        pages_text = []
+        for page in reader.pages:
+            text = page.extract_text()
+            if text:
+                pages_text.append(text.strip())
+        result = "\n".join(pages_text)
+        return result
     except Exception as e:
-        return f"Error: {e}"
+        return f"Error reading PDF: {e}"
 
 def render_result(icon, title, content):
     st.markdown(f"""
@@ -279,9 +288,14 @@ with tab1:
         uploaded = st.file_uploader("pdf", type=["pdf"], label_visibility="collapsed")
         if uploaded:
             cv_text = extract_pdf(uploaded)
-            st.success(f"✅ CV extracted — {len(cv_text.split())} words")
-            with st.expander("Preview"):
-                st.text(cv_text[:600] + "..." if len(cv_text) > 600 else cv_text)
+            word_count = len(cv_text.split()) if cv_text else 0
+            if word_count > 0:
+                st.success(f"✅ CV extracted successfully — {word_count} words")
+                with st.expander("Preview extracted text"):
+                    st.text(cv_text[:600] + "..." if len(cv_text) > 600 else cv_text)
+            else:
+                st.warning("⚠️ PDF uploaded but no text could be extracted. This usually means the PDF is image-based or scanned. Please try pasting your CV text instead.")
+                cv_text = ""
     elif cv_option == "📋 Paste Text":
         cv_text = st.text_area("paste", height=180, placeholder="Paste your full CV text here...", label_visibility="collapsed")
     else:
@@ -301,10 +315,6 @@ with tab1:
         """, unsafe_allow_html=True)
         perm_profile = st.checkbox("Profile Information", value=True)
         perm_cv      = st.checkbox("CV / Resume", value=True)
-        perm_github  = st.checkbox("GitHub Profile (optional)", value=False)
-        github_username = ""
-        if perm_github:
-            github_username = st.text_input("GitHub Username", placeholder="e.g. ahmedyaloufi-gif")
 
     with pcol2:
         st.markdown("""
@@ -357,8 +367,6 @@ with tab1:
             "skills": skills,
             "experience": experience,
             "cv_text": cv_text,
-            "perm_github": perm_github,
-            "github_username": github_username,
             "run_profile": run_profile,
             "run_career": run_career,
             "run_resume": run_resume,
@@ -401,20 +409,6 @@ with tab1:
         else:
             st.markdown('<div class="security-active">✅ No sensitive PII detected in your input</div>', unsafe_allow_html=True)
 
-        # GitHub
-        github_context = ""
-        if fd.get("perm_github") and fd.get("github_username"):
-            with st.spinner(f"🐙 Fetching GitHub profile for @{fd['github_username']}..."):
-                try:
-                    repos = get_github_user_repos(fd['github_username'])
-                    if repos["success"] and repos["repositories"]:
-                        github_context = f"\n\nGitHub Profile (@{fd['github_username']}):\n"
-                        for r in repos["repositories"][:5]:
-                            github_context += f"- {r['name']} ({r['language']}, ⭐{r['stars']}): {r['description']}\n"
-                        st.success(f"✅ Found {repos['repo_count']} public repos for @{fd['github_username']}")
-                except Exception as e:
-                    st.warning(f"Could not fetch GitHub: {e}")
-
         app_name = "careerpilot_ai"
         user_id  = "user_001"
 
@@ -423,7 +417,7 @@ with tab1:
             with st.spinner("🔍 Analyzing your profile..."):
                 try:
                     profile_result = run_agent(profile_analyzer, app_name, user_id, "s001",
-                        masked_profile + github_context)
+                        masked_profile)
                     st.session_state["profile_result"] = profile_result
                     render_result("🔍", "Profile Analysis", profile_result)
                     st.success("✅ Profile analysis complete")
@@ -475,7 +469,7 @@ with tab1:
             with st.spinner("📚 Building learning plan..."):
                 try:
                     result = run_agent(learning_agent, app_name, user_id, "s006",
-                        f"Profile: {masked_profile}\nSkill gaps: {st.session_state.get('profile_result','')}\nTarget: {fd['career_goal']}\nBuild learning plan.{github_context}")
+                        f"Profile: {masked_profile}\nSkill gaps: {st.session_state.get('profile_result','')}\nTarget: {fd['career_goal']}\nBuild learning plan.")
                     render_result("📚", "Personalized Learning Plan", result)
                     st.success("✅ Learning plan complete")
                 except Exception as e:
