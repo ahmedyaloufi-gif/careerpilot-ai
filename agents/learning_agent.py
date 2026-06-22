@@ -7,7 +7,7 @@ load_dotenv()
 # ── Learning Agent ───────────────────────────────────────────────────────────
 learning_agent = Agent(
     name="Learning_Agent",
-    model="Gemini 2.5 Flash",
+    model="Gemini 3.5 Flash",
     description="Builds a personalized learning plan with real GitHub resources based on skill gaps.",
     instruction="""
     You are the CareerPilot Learning Agent — an expert at finding the best

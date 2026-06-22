@@ -7,7 +7,7 @@ load_dotenv()
 # ── Interview Agent ──────────────────────────────────────────────────────────
 interview_agent = Agent(
     name="Interview_Agent",
-    model="Gemini 2.5 Flash",
+    model="Gemini 3.5 Flash",
     description="Generates personalized technical and behavioral interview questions based on the user's target role and level.",
     instruction="""
     You are the CareerPilot Interview Agent — an expert technical interviewer
