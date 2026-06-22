@@ -26,6 +26,7 @@ from agents.learning_agent import learning_agent
 from tools.security import mask_personal_data
 import PyPDF2
 import io
+import re
 
 # ── Page Config ───────────────────────────────────────────────────────────────
 st.set_page_config(
@@ -46,7 +47,6 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
 #MainMenu, footer, header { visibility: hidden; }
 .block-container { padding: 0 2rem 2rem 2rem !important; max-width: 1200px; }
 
-/* ── Sidebar ── */
 [data-testid="stSidebar"] { background: #0F1117 !important; border-right: 1px solid #1E2130; }
 .sidebar-logo { font-family:'Space Grotesk',sans-serif; font-size:1.4rem; font-weight:700; color:#FFFFFF; padding:1.5rem 0 0.5rem 0; }
 .sidebar-tagline { font-size:0.75rem; color:#64748B; margin-bottom:2rem; }
@@ -56,16 +56,14 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
 .agent-dot { width:6px; height:6px; border-radius:50%; background:#3B82F6; flex-shrink:0; }
 .security-item { display:flex; align-items:center; gap:8px; font-size:0.8rem; color:#94A3B8; padding:4px 0; }
 
-/* ── Cards ── */
 .card { background:#FFFFFF; border:1px solid #E2E8F0; border-radius:16px; padding:1.5rem; margin-bottom:1.25rem; box-shadow:0 1px 3px rgba(0,0,0,0.04); }
 .card-header { display:flex; align-items:center; gap:10px; margin-bottom:1.25rem; }
 .card-icon { width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1rem; flex-shrink:0; }
-.icon-blue { background:#EFF6FF; } .icon-purple { background:#F5F3FF; }
-.icon-green { background:#F0FDF4; } .icon-orange { background:#FFF7ED; }
+.icon-blue{background:#EFF6FF;} .icon-purple{background:#F5F3FF;}
+.icon-green{background:#F0FDF4;} .icon-orange{background:#FFF7ED;}
 .card-title { font-family:'Space Grotesk',sans-serif; font-size:0.95rem; font-weight:600; color:#0F172A; }
 .card-desc { font-size:0.8rem; color:#64748B; margin-top:1px; }
 
-/* ── Buttons ── */
 .stButton > button[kind="primary"] {
     background:#0F172A !important; color:#FFFFFF !important; border:none !important;
     border-radius:10px !important; padding:0.65rem 1.5rem !important;
@@ -76,7 +74,6 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
 .stButton > button[kind="primary"]:disabled { background:#94A3B8 !important; cursor:not-allowed !important; transform:none !important; }
 .stButton > button { border-radius:10px !important; font-weight:500 !important; }
 
-/* ── Form Fields ── */
 .stTextInput > div > div > input,
 .stTextArea > div > div > textarea,
 .stSelectbox > div > div {
@@ -88,68 +85,45 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
     border-color:#3B82F6 !important; box-shadow:0 0 0 3px rgba(59,130,246,0.1) !important;
 }
 
-/* ── Force dark text everywhere (fixes sidebar bleed) ── */
 label, .stCheckbox label, .stCheckbox p, .stCheckbox span,
 .stRadio label, .stRadio p, .stRadio span,
 [data-testid="stCheckbox"] label, [data-testid="stCheckbox"] p, [data-testid="stCheckbox"] span,
 [data-testid="stRadio"] label, [data-testid="stRadio"] p, [data-testid="stRadio"] span,
 div[data-testid="stVerticalBlock"] label, div[data-testid="stVerticalBlock"] p,
-div[data-testid="stHorizontalBlock"] label {
-    color: #374151 !important;
-}
+div[data-testid="stHorizontalBlock"] label { color: #374151 !important; }
 
-/* ── Result cards ── */
 .result-card { background:#FFFFFF; border:1px solid #E2E8F0; border-radius:16px; margin-bottom:1rem; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,0.04); }
 .result-header { padding:1rem 1.25rem; border-bottom:1px solid #F1F5F9; display:flex; align-items:center; gap:10px; background:#FAFAFA; }
 .result-header-title { font-family:'Space Grotesk',sans-serif; font-size:0.9rem; font-weight:600; color:#0F172A; }
 
-/* ── Fix white text inside expanders ── */
-.streamlit-expanderHeader {
-    background: #F8FAFC !important; border-radius: 10px !important;
-    font-size: 0.875rem !important; font-weight: 600 !important;
-    color: #0F172A !important;
-}
-[data-testid="stExpander"] { background: #FFFFFF !important; }
-[data-testid="stExpander"] > div { background: #FFFFFF !important; }
-[data-testid="stExpander"] div[role="region"] {
-    background: #FFFFFF !important; color: #374151 !important;
-}
+.streamlit-expanderHeader { background:#F8FAFC !important; border-radius:10px !important; font-size:0.875rem !important; font-weight:600 !important; color:#0F172A !important; }
+[data-testid="stExpander"] { background:#FFFFFF !important; }
+[data-testid="stExpander"] > div { background:#FFFFFF !important; }
+[data-testid="stExpander"] div[role="region"] { background:#FFFFFF !important; color:#374151 !important; }
 [data-testid="stExpander"] div[role="region"] p,
 [data-testid="stExpander"] div[role="region"] span,
 [data-testid="stExpander"] div[role="region"] li,
 [data-testid="stExpander"] div[role="region"] div,
 [data-testid="stExpander"] div[role="region"] strong,
-[data-testid="stExpander"] div[role="region"] em {
-    color: #374151 !important;
-    background: #FFFFFF !important;
-}
-/* Also fix stMarkdownContainer inside expanders */
+[data-testid="stExpander"] div[role="region"] em { color:#374151 !important; background:#FFFFFF !important; }
 [data-testid="stExpander"] [data-testid="stMarkdownContainer"] p,
 [data-testid="stExpander"] [data-testid="stMarkdownContainer"] span,
 [data-testid="stExpander"] [data-testid="stMarkdownContainer"] li,
-[data-testid="stExpander"] [data-testid="stMarkdownContainer"] {
-    color: #374151 !important;
-    background: transparent !important;
-}
+[data-testid="stExpander"] [data-testid="stMarkdownContainer"] { color:#374151 !important; background:transparent !important; }
 
-/* ── Security badge ── */
 .security-active { background:#F0FDF4; border:1px solid #BBF7D0; border-radius:10px; padding:12px 16px; font-size:0.8rem; color:#15803D; margin:1rem 0; }
-.required-star { color:#EF4444; font-size:0.8rem; }
-.optional-tag { font-size:0.7rem; color:#94A3B8; font-style:italic; margin-left:4px; }
 
-/* ── Manual Tab Buttons ── */
-div[data-testid="stHorizontalBlock"] > div > div > button {
-    border-radius:10px !important; font-size:0.875rem !important;
-    font-weight:500 !important; border:1px solid #E2E8F0 !important;
-    background:#F8FAFC !important; color:#64748B !important;
-    padding:0.6rem 1rem !important; transition:all 0.15s !important;
-}
-div[data-testid="stHorizontalBlock"] > div > div > button[kind="primary"] {
-    background:#0F172A !important; color:#FFFFFF !important;
-    border-color:#0F172A !important; font-weight:600 !important;
-}
+/* ── Interview chat ── */
+.chat-container { background:#FFFFFF; border:1px solid #E2E8F0; border-radius:16px; padding:1.5rem; margin-bottom:1rem; }
+.chat-msg-user { background:#0F172A; color:#FFFFFF; border-radius:12px 12px 4px 12px; padding:10px 14px; margin:8px 0 8px 20%; font-size:0.875rem; }
+.chat-msg-ai { background:#F1F5F9; color:#0F172A; border-radius:12px 12px 12px 4px; padding:10px 14px; margin:8px 20% 8px 0; font-size:0.875rem; }
+.chat-label-user { text-align:right; font-size:0.7rem; color:#94A3B8; margin-bottom:2px; }
+.chat-label-ai { font-size:0.7rem; color:#94A3B8; margin-bottom:2px; }
 
-/* ── File uploader ── */
+/* ── Agent badge ── */
+.agent-badge { display:inline-flex; align-items:center; gap:6px; background:#EFF6FF; border:1px solid #BFDBFE; border-radius:100px; padding:4px 12px; font-size:0.75rem; color:#1D4ED8; font-weight:500; margin:3px; }
+.agent-badge.skipped { background:#F1F5F9; border-color:#E2E8F0; color:#94A3B8; }
+
 [data-testid="stFileUploader"] { border:2px dashed #E2E8F0 !important; border-radius:12px !important; background:#FAFAFA !important; }
 hr { border:none; border-top:1px solid #F1F5F9; margin:1.5rem 0; }
 .stSuccess, .stInfo, .stWarning, .stError { border-radius:10px !important; font-size:0.85rem !important; }
@@ -185,13 +159,10 @@ def run_agent(agent, app_name, user_id, session_id, message):
     return asyncio.run(run_agent_async(agent, app_name, user_id, session_id, message))
 
 def extract_pdf(f):
-    """Extract text from PDF using pdfplumber first, then PyPDF2 as fallback."""
     try:
         file_bytes = f.read()
         if not file_bytes:
             return ""
-
-        # Try pdfplumber first (handles most PDF types)
         try:
             import pdfplumber
             with pdfplumber.open(io.BytesIO(file_bytes)) as pdf:
@@ -205,8 +176,6 @@ def extract_pdf(f):
                     return result
         except Exception:
             pass
-
-        # Fallback to PyPDF2
         reader = PyPDF2.PdfReader(io.BytesIO(file_bytes))
         pages_text = []
         for page in reader.pages:
@@ -214,11 +183,26 @@ def extract_pdf(f):
             if text and text.strip():
                 pages_text.append(text.strip())
         return "\n".join(pages_text)
-
     except Exception as e:
         return f"Error reading PDF: {e}"
 
-def render_result(icon, title, content):
+def make_links_clickable(text):
+    """Convert plain URLs in text to clickable markdown links."""
+    url_pattern = r'(https?://[^\s\)\]]+)'
+    def replace_url(m):
+        url = m.group(1).rstrip('.,;')
+        # Try to get a short name from the URL
+        parts = url.replace('https://','').replace('http://','').split('/')
+        if len(parts) >= 2 and parts[0] == 'github.com':
+            label = f"{parts[1]}/{parts[2]}" if len(parts) > 2 else parts[1]
+        else:
+            label = parts[0]
+        return f"[🔗 {label}]({url})"
+    return re.sub(url_pattern, replace_url, text)
+
+def render_result(icon, title, content, make_links=False):
+    if make_links:
+        content = make_links_clickable(content)
     st.markdown(f"""
     <div class="result-card">
         <div class="result-header">
@@ -228,8 +212,77 @@ def render_result(icon, title, content):
     </div>
     """, unsafe_allow_html=True)
     with st.expander(f"View {title}", expanded=True):
-        st.markdown(f'<div style="color:#374151;background:#FFFFFF;padding:0.5rem 0">{content}</div>',
-                    unsafe_allow_html=True)
+        st.markdown(content)
+
+def decide_agents(fd):
+    """
+    Smart agent selection — decides which agents to run based on user profile.
+    Returns a dict of agent_name -> (should_run: bool, reason: str)
+    """
+    has_cv       = bool(fd.get("cv_text", "").strip())
+    has_skills   = bool(fd.get("skills", "").strip())
+    has_exp      = bool(fd.get("experience", "").strip())
+    level        = fd.get("current_level", "")
+    goal         = fd.get("career_goal", "").lower()
+
+    is_student   = any(x in level.lower() for x in ["student", "high school"])
+    is_early     = "early professional" in level.lower() or "recent graduate" in level.lower()
+    is_technical = any(x in goal for x in ["engineer","developer","scientist","analyst","programmer","architect","ml","ai","data"])
+
+    agents = {}
+
+    # Profile Analyzer — always run
+    agents["profile"] = (True, "Always runs to assess your current situation")
+
+    # Career Planner — always run
+    agents["career"] = (True, "Always runs to build your roadmap")
+
+    # Resume Agent — only if CV provided OR early professional
+    if has_cv:
+        agents["resume"] = (True, "You uploaded a CV — reviewing it for ATS compatibility")
+    elif is_early:
+        agents["resume"] = (True, "As an early professional, CV advice is critical")
+    else:
+        agents["resume"] = (False, "Skipped — no CV uploaded. Upload a CV to get ATS feedback")
+
+    # Project Generator — run for students or if no experience
+    if is_student or not has_exp:
+        agents["projects"] = (True, "Building projects is your #1 priority to fill experience gaps")
+    elif is_technical:
+        agents["projects"] = (True, "Technical roles require a strong project portfolio")
+    else:
+        agents["projects"] = (False, "Skipped — your experience level suggests you may already have portfolio projects")
+
+    # Interview Agent — always run for job seekers
+    agents["interview"] = (True, "Interview preparation is essential for any career goal")
+
+    # Learning Agent — run for students or those with skill gaps
+    if is_student or not has_skills:
+        agents["learning"] = (True, "Building a structured learning plan to close your skill gaps")
+    elif is_technical:
+        agents["learning"] = (True, "Technical roles require continuous learning — building your study plan")
+    else:
+        agents["learning"] = (False, "Skipped — your profile suggests you have sufficient learning resources")
+
+    return agents
+
+# ── Session state init ────────────────────────────────────────────────────────
+def init_state():
+    defaults = {
+        "active_tab": "profile",
+        "report_ready": False,
+        "form_data": None,
+        "report_results": {},   # stores each agent's output text
+        "interview_mode": False,
+        "interview_choice": None,  # "start" | "improve"
+        "interview_messages": [],  # full conversation history
+        "interview_session_id": "interview_session_001",
+    }
+    for k, v in defaults.items():
+        if k not in st.session_state:
+            st.session_state[k] = v
+
+init_state()
 
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 with st.sidebar:
@@ -259,52 +312,39 @@ st.markdown("""
         Career Development Report
     </div>
     <div style="font-size:0.875rem;color:#64748B;margin-top:4px">
-        Fill in your profile and let 6 AI agents build your personalized career plan
+        Fill in your profile and let AI agents build your personalized career plan
     </div>
 </div>
 """, unsafe_allow_html=True)
 
-# ── Check API key ─────────────────────────────────────────────────────────────
 if not os.environ.get("GOOGLE_API_KEY"):
     st.error("⚠️ No API key found. Please add GOOGLE_API_KEY to your Streamlit secrets or .env file.")
     st.stop()
 
-# ── Session state init ────────────────────────────────────────────────────────
-if "active_tab" not in st.session_state:
-    st.session_state["active_tab"] = "profile"  # "profile" | "report" | "about"
-if "report_ready" not in st.session_state:
-    st.session_state["report_ready"] = False
-if "form_data" not in st.session_state:
-    st.session_state["form_data"] = None
-
 # ── Manual Tab Bar ────────────────────────────────────────────────────────────
 _t = st.session_state["active_tab"]
-
 _tc1, _tc2, _tc3 = st.columns(3)
 with _tc1:
     if st.button("✏️  My Profile", use_container_width=True,
-                 type="primary" if _t == "profile" else "secondary",
-                 key="tab_btn_profile"):
+                 type="primary" if _t == "profile" else "secondary", key="tab_profile"):
         st.session_state["active_tab"] = "profile"
         st.rerun()
 with _tc2:
     if st.button("📊  My Report", use_container_width=True,
-                 type="primary" if _t == "report" else "secondary",
-                 key="tab_btn_report"):
+                 type="primary" if _t == "report" else "secondary", key="tab_report"):
         st.session_state["active_tab"] = "report"
         st.rerun()
 with _tc3:
     if st.button("ℹ️  About", use_container_width=True,
-                 type="primary" if _t == "about" else "secondary",
-                 key="tab_btn_about"):
+                 type="primary" if _t == "about" else "secondary", key="tab_about"):
         st.session_state["active_tab"] = "about"
         st.rerun()
 
 st.markdown("<hr style='margin:0.5rem 0 1.5rem 0'>", unsafe_allow_html=True)
 
-# ═══════════════════════════════════════════════════════
+# ═══════════════════════════════════════
 # TAB 1 — PROFILE
-# ═══════════════════════════════════════════════════════
+# ═══════════════════════════════════════
 if st.session_state["active_tab"] == "profile":
 
     st.markdown("""
@@ -351,7 +391,6 @@ if st.session_state["active_tab"] == "profile":
 
     st.markdown("<hr>", unsafe_allow_html=True)
 
-    # ── CV Upload ──
     st.markdown("""
     <div class="card-header" style="margin-bottom:1rem">
         <div class="card-icon icon-purple">📄</div>
@@ -372,23 +411,19 @@ if st.session_state["active_tab"] == "profile":
                 cv_text = extract_pdf(uploaded)
             word_count = len(cv_text.split()) if cv_text and not cv_text.startswith("Error") else 0
             if word_count > 10:
-                st.success(f"✅ CV extracted successfully — {word_count} words found")
-                with st.expander("Preview extracted text"):
+                st.success(f"✅ CV extracted — {word_count} words found")
+                with st.expander("Preview"):
                     st.text(cv_text[:800] + "..." if len(cv_text) > 800 else cv_text)
             else:
-                st.warning("⚠️ Could not extract text from this PDF. It may be image-based or scanned. Please use **Paste Text** instead.")
+                st.warning("⚠️ Could not extract text. PDF may be image-based. Please use **Paste Text** instead.")
                 cv_text = ""
     elif cv_option == "📋 Paste Text":
-        cv_text = st.text_area("paste", height=180,
-                               placeholder="Paste your full CV text here...",
-                               label_visibility="collapsed")
+        cv_text = st.text_area("paste", height=180, placeholder="Paste your full CV text here...", label_visibility="collapsed")
     else:
-        cv_text = ""
-        st.info("⏭️ Skipping CV — agents will analyze your profile text only")
+        st.info("⏭️ Skipping CV — agents will analyze your profile only")
 
     st.markdown("<hr>", unsafe_allow_html=True)
 
-    # ── Permissions & Agents ──
     pcol1, pcol2 = st.columns(2, gap="medium")
     with pcol1:
         st.markdown("""
@@ -405,35 +440,23 @@ if st.session_state["active_tab"] == "profile":
         st.markdown("""
         <div class="card-header" style="margin-bottom:0.75rem">
             <div class="card-icon icon-orange">🤖</div>
-            <div><div class="card-title">Select Agents</div>
-            <div class="card-desc">Choose which agents to activate</div></div>
+            <div><div class="card-title">Smart Agent Selection</div>
+            <div class="card-desc">AI will choose the right agents for you</div></div>
         </div>
         """, unsafe_allow_html=True)
-        run_profile   = st.checkbox("🔍 Profile Analyzer", value=True)
-        run_career    = st.checkbox("🗺️ Career Planner", value=True)
-        run_resume    = st.checkbox("📄 Resume Agent", value=True)
-        run_projects  = st.checkbox("💡 Project Generator", value=True)
-        run_interview = st.checkbox("🎤 Interview Agent", value=True)
-        run_learning  = st.checkbox("📚 Learning Agent", value=True)
+        st.info("🧠 After you click Generate, the system will automatically decide which agents are most relevant for your profile — no manual selection needed.")
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # ── Validation ──
     errors = []
-    if not name:
-        errors.append("Full Name is required")
-    if current_level == "— Select your level —":
-        errors.append("Please select your Current Level")
-    if not field_of_study:
-        errors.append("Field of Study is required")
-    if not career_goal:
-        errors.append("Career Goal is required")
-    if not perm_profile:
-        errors.append("Profile permission must be granted")
+    if not name: errors.append("Full Name is required")
+    if current_level == "— Select your level —": errors.append("Please select your Current Level")
+    if not field_of_study: errors.append("Field of Study is required")
+    if not career_goal: errors.append("Career Goal is required")
+    if not perm_profile: errors.append("Profile permission must be granted")
 
-    if errors:
-        for err in errors:
-            st.markdown(f'<div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:8px 12px;font-size:0.8rem;color:#DC2626;margin-bottom:4px">⚠️ {err}</div>', unsafe_allow_html=True)
+    for err in errors:
+        st.markdown(f'<div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:8px 12px;font-size:0.8rem;color:#DC2626;margin-bottom:4px">⚠️ {err}</div>', unsafe_allow_html=True)
 
     generate_btn = st.button(
         "🚀  Generate My Career Report",
@@ -444,40 +467,31 @@ if st.session_state["active_tab"] == "profile":
 
     if generate_btn and len(errors) == 0:
         st.session_state["report_ready"] = True
+        st.session_state["report_results"] = {}  # clear old results
+        st.session_state["interview_mode"] = False
+        st.session_state["interview_choice"] = None
+        st.session_state["interview_messages"] = []
         st.session_state["active_tab"] = "report"
         st.session_state["form_data"] = {
-            "name": name,
-            "current_level": current_level,
-            "field_of_study": field_of_study,
-            "career_goal": career_goal,
-            "skills": skills,
-            "experience": experience,
-            "cv_text": cv_text,
-            "run_profile": run_profile,
-            "run_career": run_career,
-            "run_resume": run_resume,
-            "run_projects": run_projects,
-            "run_interview": run_interview,
-            "run_learning": run_learning,
+            "name": name, "current_level": current_level,
+            "field_of_study": field_of_study, "career_goal": career_goal,
+            "skills": skills, "experience": experience, "cv_text": cv_text,
         }
         st.rerun()
 
-# ═══════════════════════════════════════════════════════
+# ═══════════════════════════════════════
 # TAB 2 — REPORT
-# ═══════════════════════════════════════════════════════
-if st.session_state["active_tab"] == "report":
+# ═══════════════════════════════════════
+elif st.session_state["active_tab"] == "report":
+
     if not st.session_state.get("report_ready") or not st.session_state.get("form_data"):
-        # Empty state
         st.markdown("""
         <div style="text-align:center;padding:4rem 2rem">
             <div style="font-size:3rem;margin-bottom:1rem">📊</div>
-            <div style="font-family:'Space Grotesk',sans-serif;font-size:1.25rem;font-weight:600;color:#0F172A;margin-bottom:8px">
-                No report yet
-            </div>
+            <div style="font-family:'Space Grotesk',sans-serif;font-size:1.25rem;font-weight:600;color:#0F172A;margin-bottom:8px">No report yet</div>
             <div style="font-size:0.875rem;color:#64748B;max-width:400px;margin:0 auto">
-                Go to the <strong>✏️ My Profile</strong> tab, fill in your details,
+                Go to <strong>✏️ My Profile</strong>, fill in your details,
                 and click <strong>Generate My Career Report</strong>.
-                Your results will appear here automatically.
             </div>
         </div>
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;max-width:700px;margin:2rem auto">
@@ -492,8 +506,9 @@ if st.session_state["active_tab"] == "report":
 
     else:
         fd = st.session_state["form_data"]
+        results = st.session_state["report_results"]
 
-        # ── Header ──
+        # ── Report header ──
         st.markdown(f"""
         <div style="background:#0F172A;border-radius:16px;padding:1.5rem;margin-bottom:1.5rem">
             <div style="font-family:'Space Grotesk',sans-serif;font-size:1.2rem;font-weight:700;color:#FFFFFF">
@@ -505,18 +520,13 @@ if st.session_state["active_tab"] == "report":
         </div>
         """, unsafe_allow_html=True)
 
-        # ── Security ──
+        # ── Security masking ──
         user_input = f"My name is {fd['name']}. I am a {fd['current_level']} studying {fd['field_of_study']}."
-        if fd['skills']:
-            user_input += f" Skills: {fd['skills']}."
-        if fd['experience']:
-            user_input += f" Experience: {fd['experience']}."
+        if fd.get('skills'): user_input += f" Skills: {fd['skills']}."
+        if fd.get('experience'): user_input += f" Experience: {fd['experience']}."
         user_input += f" Career goal: {fd['career_goal']}."
 
-        if fd['cv_text']:
-            masked_cv, cv_vault = mask_personal_data(fd['cv_text'])
-        else:
-            masked_cv, cv_vault = "", {}
+        masked_cv, cv_vault = mask_personal_data(fd['cv_text']) if fd.get('cv_text') else ("", {})
         masked_profile, profile_vault = mask_personal_data(user_input)
         vault = {**cv_vault, **profile_vault}
 
@@ -526,97 +536,252 @@ if st.session_state["active_tab"] == "report":
         else:
             st.markdown('<div class="security-active">✅ Security Layer Active — No sensitive PII detected</div>', unsafe_allow_html=True)
 
+        # ── Decide which agents to run ──
+        agent_plan = decide_agents(fd)
+
+        # Show agent plan
+        st.markdown('<div style="margin:0.75rem 0;font-size:0.8rem;color:#64748B;font-weight:500">🧠 Smart Agent Selection:</div>', unsafe_allow_html=True)
+        badges = ""
+        for agent_key, (should_run, reason) in agent_plan.items():
+            icons = {"profile":"🔍","career":"🗺️","resume":"📄","projects":"💡","interview":"🎤","learning":"📚"}
+            names = {"profile":"Profile","career":"Career","resume":"Resume","projects":"Projects","interview":"Interview","learning":"Learning"}
+            cls = "agent-badge" if should_run else "agent-badge skipped"
+            badges += f'<span class="{cls}">{icons[agent_key]} {names[agent_key]}</span>'
+        st.markdown(f'<div style="margin-bottom:1rem">{badges}</div>', unsafe_allow_html=True)
+
         app_name = "careerpilot_ai"
         user_id  = "user_001"
 
-        # ── Run agents ──
-        if fd["run_profile"]:
-            with st.spinner("🔍 Agent 1: Analyzing your profile..."):
-                try:
-                    profile_result = run_agent(profile_analyzer, app_name, user_id, "s001", masked_profile)
-                    st.session_state["profile_result"] = profile_result
-                    render_result("🔍", "Profile Analysis", profile_result)
-                    st.success("✅ Profile analysis complete")
-                except Exception as e:
-                    st.error(f"Profile analysis failed: {e}")
-                    st.stop()
+        # ── Run agents — only if not already run (persistence) ──
 
-        if fd["run_career"]:
-            with st.spinner("🗺️ Agent 2: Building career roadmap..."):
-                try:
-                    result = run_agent(career_planner, app_name, user_id, "s002",
-                        f"Profile: {masked_profile}\nAnalysis: {st.session_state.get('profile_result','')}\nCreate roadmap.")
-                    render_result("🗺️", "Career Roadmap", result)
-                    st.success("✅ Career roadmap complete")
-                except Exception as e:
-                    st.error(f"Career planning failed: {e}")
+        # Agent 1: Profile Analyzer
+        if agent_plan["profile"][0]:
+            if "profile" not in results:
+                with st.spinner("🔍 Agent 1: Analyzing your profile..."):
+                    try:
+                        r = run_agent(profile_analyzer, app_name, user_id, "s001", masked_profile)
+                        results["profile"] = r
+                        st.session_state["report_results"] = results
+                    except Exception as e:
+                        st.error(f"Profile analysis failed: {e}"); st.stop()
+            render_result("🔍", "Profile Analysis", results["profile"])
 
-        if fd["run_resume"]:
-            with st.spinner("📄 Agent 3: Reviewing resume..."):
-                try:
-                    cv_section = f"\nCV: {masked_cv}" if masked_cv else "\nNo CV provided — give general advice based on profile."
-                    result = run_agent(resume_agent, app_name, user_id, "s003",
-                        f"Profile: {masked_profile}\nTarget: {fd['career_goal']}{cv_section}")
-                    render_result("📄", "Resume Analysis", result)
-                    st.success("✅ Resume analysis complete")
-                except Exception as e:
-                    st.error(f"Resume review failed: {e}")
+        # Agent 2: Career Planner
+        if agent_plan["career"][0]:
+            if "career" not in results:
+                with st.spinner("🗺️ Agent 2: Building career roadmap..."):
+                    try:
+                        r = run_agent(career_planner, app_name, user_id, "s002",
+                            f"Profile: {masked_profile}\nAnalysis: {results.get('profile','')}\nCreate roadmap.")
+                        results["career"] = r
+                        st.session_state["report_results"] = results
+                    except Exception as e:
+                        st.error(f"Career planning failed: {e}")
+            if "career" in results:
+                render_result("🗺️", "Career Roadmap", results["career"])
 
-        if fd["run_projects"]:
-            with st.spinner("💡 Agent 4: Generating project ideas..."):
-                try:
-                    result = run_agent(project_generator, app_name, user_id, "s004",
-                        f"Profile: {masked_profile}\nAnalysis: {st.session_state.get('profile_result','')}\nSuggest 3 projects for {fd['career_goal']}.")
-                    render_result("💡", "Project Suggestions", result)
-                    st.success("✅ Project suggestions complete")
-                except Exception as e:
-                    st.error(f"Project generation failed: {e}")
+        # Agent 3: Resume Agent
+        if agent_plan["resume"][0]:
+            if "resume" not in results:
+                with st.spinner("📄 Agent 3: Reviewing resume..."):
+                    try:
+                        cv_section = f"\nCV: {masked_cv}" if masked_cv else "\nNo CV — give general advice."
+                        r = run_agent(resume_agent, app_name, user_id, "s003",
+                            f"Profile: {masked_profile}\nTarget: {fd['career_goal']}{cv_section}")
+                        results["resume"] = r
+                        st.session_state["report_results"] = results
+                    except Exception as e:
+                        st.error(f"Resume review failed: {e}")
+            if "resume" in results:
+                render_result("📄", "Resume Analysis", results["resume"])
+        else:
+            st.info(f"📄 Resume Agent: {agent_plan['resume'][1]}")
 
-        if fd["run_interview"]:
-            with st.spinner("🎤 Agent 5: Generating interview guide..."):
-                try:
-                    result = run_agent(interview_agent, app_name, user_id, "s005",
-                        f"Profile: {masked_profile}\nAnalysis: {st.session_state.get('profile_result','')}\nTarget: {fd['career_goal']}\nGenerate interview guide.")
-                    render_result("🎤", "Interview Preparation", result)
-                    st.success("✅ Interview guide complete")
-                except Exception as e:
-                    st.error(f"Interview prep failed: {e}")
+        # Agent 4: Project Generator
+        if agent_plan["projects"][0]:
+            if "projects" not in results:
+                with st.spinner("💡 Agent 4: Generating project ideas..."):
+                    try:
+                        r = run_agent(project_generator, app_name, user_id, "s004",
+                            f"Profile: {masked_profile}\nAnalysis: {results.get('profile','')}\nSuggest 3 projects for {fd['career_goal']}.")
+                        results["projects"] = r
+                        st.session_state["report_results"] = results
+                    except Exception as e:
+                        st.error(f"Project generation failed: {e}")
+            if "projects" in results:
+                render_result("💡", "Project Suggestions", results["projects"])
+        else:
+            st.info(f"💡 Project Generator: {agent_plan['projects'][1]}")
 
-        if fd["run_learning"]:
-            with st.spinner("📚 Agent 6: Building learning plan..."):
-                try:
-                    result = run_agent(learning_agent, app_name, user_id, "s006",
-                        f"Profile: {masked_profile}\nSkill gaps: {st.session_state.get('profile_result','')}\nTarget: {fd['career_goal']}\nBuild personalized learning plan.")
-                    render_result("📚", "Personalized Learning Plan", result)
-                    st.success("✅ Learning plan complete")
-                except Exception as e:
-                    st.error(f"Learning plan failed: {e}")
+        # Agent 5: Interview Agent
+        if agent_plan["interview"][0]:
+            if "interview" not in results:
+                with st.spinner("🎤 Agent 5: Generating interview guide..."):
+                    try:
+                        r = run_agent(interview_agent, app_name, user_id, "s005",
+                            f"Profile: {masked_profile}\nAnalysis: {results.get('profile','')}\nTarget: {fd['career_goal']}\nGenerate interview guide.")
+                        results["interview"] = r
+                        st.session_state["report_results"] = results
+                    except Exception as e:
+                        st.error(f"Interview prep failed: {e}")
+            if "interview" in results:
+                render_result("🎤", "Interview Preparation", results["interview"])
 
-        # ── Done ──
-        st.balloons()
-        st.markdown("""
-        <div style="background:linear-gradient(135deg,#0F172A,#1E293B);border-radius:16px;padding:1.5rem;text-align:center;margin-top:1.5rem">
-            <div style="font-family:'Space Grotesk',sans-serif;font-size:1.1rem;font-weight:600;color:#FFFFFF;margin-bottom:4px">
-                🎉 Your CareerPilot Report is Complete!
+        # Agent 6: Learning Agent
+        if agent_plan["learning"][0]:
+            if "learning" not in results:
+                with st.spinner("📚 Agent 6: Building learning plan..."):
+                    try:
+                        r = run_agent(learning_agent, app_name, user_id, "s006",
+                            f"Profile: {masked_profile}\nSkill gaps: {results.get('profile','')}\nTarget: {fd['career_goal']}\nBuild learning plan with real GitHub links.")
+                        results["learning"] = r
+                        st.session_state["report_results"] = results
+                    except Exception as e:
+                        st.error(f"Learning plan failed: {e}")
+            if "learning" in results:
+                render_result("📚", "Personalized Learning Plan", results["learning"], make_links=True)
+        else:
+            st.info(f"📚 Learning Agent: {agent_plan['learning'][1]}")
+
+        # ── Report complete banner ──
+        if len(results) > 0:
+            st.markdown("""
+            <div style="background:linear-gradient(135deg,#0F172A,#1E293B);border-radius:16px;padding:1.5rem;text-align:center;margin-top:1.5rem">
+                <div style="font-family:'Space Grotesk',sans-serif;font-size:1.1rem;font-weight:600;color:#FFFFFF;margin-bottom:4px">
+                    🎉 Your CareerPilot Report is Complete!
+                </div>
+                <div style="font-size:0.8rem;color:#94A3B8">
+                    Expand each section above to read your full results
+                </div>
             </div>
-            <div style="font-size:0.8rem;color:#94A3B8">
-                Expand each section above to read your full results
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
 
-        st.markdown("<br>", unsafe_allow_html=True)
-        if st.button("🔄 Start Over — Generate New Report", key="restart"):
-            st.session_state["report_ready"] = False
-            st.session_state["form_data"] = None
-            st.session_state["active_tab"] = "profile"
-            st.session_state.pop("profile_result", None)
-            st.rerun()
+            st.markdown("<br>", unsafe_allow_html=True)
 
-# ═══════════════════════════════════════════════════════
+            # ── Interview Practice button ──
+            if "interview" in results and not st.session_state.get("interview_mode"):
+                st.markdown("""
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon icon-blue">🎤</div>
+                        <div>
+                            <div class="card-title">Ready to Practice Your Interview?</div>
+                            <div class="card-desc">Practice with an AI interviewer based on your profile and target role</div>
+                        </div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+                ic1, ic2 = st.columns(2, gap="medium")
+                with ic1:
+                    if st.button("🎤 Start Interview Practice", type="primary", use_container_width=True, key="start_interview"):
+                        st.session_state["interview_mode"] = True
+                        st.session_state["interview_choice"] = "start"
+                        st.session_state["interview_messages"] = []
+                        st.rerun()
+                with ic2:
+                    if st.button("📝 Improve My CV First", use_container_width=True, key="improve_cv"):
+                        st.session_state["active_tab"] = "profile"
+                        st.rerun()
+
+            # ── Interview Chat ──
+            if st.session_state.get("interview_mode"):
+                st.markdown("<hr>", unsafe_allow_html=True)
+                st.markdown("""
+                <div style="font-family:'Space Grotesk',sans-serif;font-size:1.1rem;font-weight:700;color:#0F172A;margin-bottom:1rem">
+                    🎤 Interview Practice Room
+                </div>
+                """, unsafe_allow_html=True)
+
+                st.info(f"You are being interviewed for: **{fd['career_goal']}** — Answer naturally, as you would in a real interview.")
+
+                # Display chat history
+                messages = st.session_state["interview_messages"]
+
+                if not messages:
+                    # First message from AI interviewer
+                    opening = (
+                        f"Hello {fd['name']}! I'm your AI interviewer today. "
+                        f"You're interviewing for a {fd['career_goal']} position. "
+                        f"Let's begin. Tell me a little about yourself and why you're interested in this role."
+                    )
+                    messages.append({"role": "ai", "text": opening})
+                    st.session_state["interview_messages"] = messages
+
+                # Render chat messages
+                for msg in messages:
+                    if msg["role"] == "user":
+                        st.markdown(f'<div class="chat-label-user">You</div><div class="chat-msg-user">{msg["text"]}</div>', unsafe_allow_html=True)
+                    else:
+                        st.markdown(f'<div class="chat-label-ai">🤖 Interviewer</div><div class="chat-msg-ai">{msg["text"]}</div>', unsafe_allow_html=True)
+
+                # User input
+                st.markdown("<br>", unsafe_allow_html=True)
+                user_answer = st.text_area("Your answer", placeholder="Type your answer here...",
+                                           height=100, key=f"chat_input_{len(messages)}",
+                                           label_visibility="collapsed")
+
+                send_col, end_col = st.columns([3, 1])
+                with send_col:
+                    send_btn = st.button("Send Answer ➤", type="primary", use_container_width=True, key="send_answer")
+                with end_col:
+                    end_btn = st.button("End Interview", use_container_width=True, key="end_interview")
+
+                if send_btn and user_answer.strip():
+                    messages.append({"role": "user", "text": user_answer.strip()})
+
+                    # Build conversation context
+                    convo = "\n".join([
+                        f"{'Candidate' if m['role']=='user' else 'Interviewer'}: {m['text']}"
+                        for m in messages
+                    ])
+
+                    interview_prompt = f"""
+You are a professional interviewer conducting a real job interview.
+The candidate is: {fd['name']}, a {fd['current_level']} targeting {fd['career_goal']}.
+Their skills: {fd.get('skills','Not provided')}.
+Their experience: {fd.get('experience','Not provided')}.
+
+Conversation so far:
+{convo}
+
+Continue the interview naturally. Ask the next relevant question based on their answer.
+Give brief encouraging feedback on their answer (1 sentence), then ask your next question.
+Keep responses concise — under 100 words total.
+Do NOT end the interview unless the candidate asks to stop.
+"""
+                    with st.spinner("Interviewer is thinking..."):
+                        try:
+                            session_id = f"interview_{len(messages)}"
+                            ai_response = run_agent(interview_agent, app_name, user_id, session_id, interview_prompt)
+                            messages.append({"role": "ai", "text": ai_response})
+                            st.session_state["interview_messages"] = messages
+                        except Exception as e:
+                            st.error(f"Interview error: {e}")
+                    st.rerun()
+
+                if end_btn:
+                    messages.append({"role": "ai", "text": f"Thank you for the interview, {fd['name']}! You did well. Keep practicing and reviewing your responses. Good luck with your career journey! 🎉"})
+                    st.session_state["interview_messages"] = messages
+                    st.session_state["interview_mode"] = False
+                    st.rerun()
+
+            # ── Start Over ──
+            st.markdown("<br>", unsafe_allow_html=True)
+            if st.button("🔄 Start Over — Generate New Report", key="restart"):
+                st.session_state["report_ready"] = False
+                st.session_state["form_data"] = None
+                st.session_state["report_results"] = {}
+                st.session_state["active_tab"] = "profile"
+                st.session_state["interview_mode"] = False
+                st.session_state["interview_messages"] = []
+                st.session_state.pop("profile_result", None)
+                st.rerun()
+
+# ═══════════════════════════════════════
 # TAB 3 — ABOUT
-# ═══════════════════════════════════════════════════════
-if st.session_state["active_tab"] == "about":
+# ═══════════════════════════════════════
+elif st.session_state["active_tab"] == "about":
     st.markdown("""
     <div class="card">
         <div class="card-header">
@@ -634,14 +799,14 @@ if st.session_state["active_tab"] == "about":
     """, unsafe_allow_html=True)
 
     st.code("""
-User Input  →  Security Layer  →  MCP Servers  →  Agent Pipeline  →  Report
+User Input  →  Security Layer  →  Smart Agent Selection  →  Agent Pipeline  →  Report
 Security:   PII Masking · Permission System · Data Vault
 MCP:        Filesystem MCP · GitHub MCP
-Agents:     Profile Analyzer → Career Planner → Resume Agent
-            → Project Generator → Interview Agent → Learning Agent
+Agents:     Profile Analyzer → Career Planner → Resume Agent (if CV)
+            → Project Generator (if student) → Interview Agent → Learning Agent
     """, language="text")
 
     c1, c2, c3 = st.columns(3)
     for col, num, lbl in zip([c1,c2,c3],["6","2","3"],["AI Agents","MCP Servers","Security Layers"]):
         with col:
-            st.markdown(f'<div class="card" style="text-align:center"><div style="font-size:1.75rem;font-weight:700;color:#0F172A;font-family:Space Grotesk,sans-serif">{num}</div><div style="font-size:0.8rem;color:#64748B;margin-top:4px">{lbl}</div></div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="card" style="text-align:center"><div style="font-size:1.75rem;font-weight:700;color:#0F172A">{num}</div><div style="font-size:0.8rem;color:#64748B;margin-top:4px">{lbl}</div></div>', unsafe_allow_html=True)
