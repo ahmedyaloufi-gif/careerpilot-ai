@@ -137,10 +137,17 @@ div[data-testid="stHorizontalBlock"] label {
 .required-star { color:#EF4444; font-size:0.8rem; }
 .optional-tag { font-size:0.7rem; color:#94A3B8; font-style:italic; margin-left:4px; }
 
-/* ── Tabs ── */
-.stTabs [data-baseweb="tab-list"] { gap:4px; background:#F1F5F9; border-radius:12px; padding:4px; border:none; }
-.stTabs [data-baseweb="tab"] { border-radius:8px !important; font-size:0.85rem !important; font-weight:500 !important; color:#64748B !important; padding:8px 16px !important; border:none !important; background:transparent !important; }
-.stTabs [aria-selected="true"] { background:#FFFFFF !important; color:#0F172A !important; box-shadow:0 1px 3px rgba(0,0,0,0.08) !important; font-weight:600 !important; }
+/* ── Manual Tab Buttons ── */
+div[data-testid="stHorizontalBlock"] > div > div > button {
+    border-radius:10px !important; font-size:0.875rem !important;
+    font-weight:500 !important; border:1px solid #E2E8F0 !important;
+    background:#F8FAFC !important; color:#64748B !important;
+    padding:0.6rem 1rem !important; transition:all 0.15s !important;
+}
+div[data-testid="stHorizontalBlock"] > div > div > button[kind="primary"] {
+    background:#0F172A !important; color:#FFFFFF !important;
+    border-color:#0F172A !important; font-weight:600 !important;
+}
 
 /* ── File uploader ── */
 [data-testid="stFileUploader"] { border:2px dashed #E2E8F0 !important; border-radius:12px !important; background:#FAFAFA !important; }
@@ -264,30 +271,41 @@ if not os.environ.get("GOOGLE_API_KEY"):
 
 # ── Session state init ────────────────────────────────────────────────────────
 if "active_tab" not in st.session_state:
-    st.session_state["active_tab"] = 0
+    st.session_state["active_tab"] = "profile"  # "profile" | "report" | "about"
 if "report_ready" not in st.session_state:
     st.session_state["report_ready"] = False
 if "form_data" not in st.session_state:
     st.session_state["form_data"] = None
 
-# ── Tabs ──────────────────────────────────────────────────────────────────────
-# Use query params to control which tab is active
-tab1, tab2, tab3 = st.tabs(["✏️  My Profile", "📊  My Report", "ℹ️  About"])
+# ── Manual Tab Bar ────────────────────────────────────────────────────────────
+_t = st.session_state["active_tab"]
+
+_tc1, _tc2, _tc3 = st.columns(3)
+with _tc1:
+    if st.button("✏️  My Profile", use_container_width=True,
+                 type="primary" if _t == "profile" else "secondary",
+                 key="tab_btn_profile"):
+        st.session_state["active_tab"] = "profile"
+        st.rerun()
+with _tc2:
+    if st.button("📊  My Report", use_container_width=True,
+                 type="primary" if _t == "report" else "secondary",
+                 key="tab_btn_report"):
+        st.session_state["active_tab"] = "report"
+        st.rerun()
+with _tc3:
+    if st.button("ℹ️  About", use_container_width=True,
+                 type="primary" if _t == "about" else "secondary",
+                 key="tab_btn_about"):
+        st.session_state["active_tab"] = "about"
+        st.rerun()
+
+st.markdown("<hr style='margin:0.5rem 0 1.5rem 0'>", unsafe_allow_html=True)
 
 # ═══════════════════════════════════════════════════════
 # TAB 1 — PROFILE
 # ═══════════════════════════════════════════════════════
-with tab1:
-
-    # Show success message if report was just generated
-    if st.session_state.get("report_ready"):
-        st.success("✅ Your report has been generated! Click the **📊 My Report** tab above to view it.")
-        if st.button("🔄 Generate New Report", key="new_report_btn"):
-            st.session_state["report_ready"] = False
-            st.session_state["form_data"] = None
-            st.session_state.pop("profile_result", None)
-            st.rerun()
-        st.markdown("<hr>", unsafe_allow_html=True)
+if st.session_state["active_tab"] == "profile":
 
     st.markdown("""
     <div class="card">
@@ -425,8 +443,8 @@ with tab1:
     )
 
     if generate_btn and len(errors) == 0:
-        # Save form data to session state
         st.session_state["report_ready"] = True
+        st.session_state["active_tab"] = "report"
         st.session_state["form_data"] = {
             "name": name,
             "current_level": current_level,
@@ -447,7 +465,7 @@ with tab1:
 # ═══════════════════════════════════════════════════════
 # TAB 2 — REPORT
 # ═══════════════════════════════════════════════════════
-with tab2:
+if st.session_state["active_tab"] == "report":
     if not st.session_state.get("report_ready") or not st.session_state.get("form_data"):
         # Empty state
         st.markdown("""
@@ -591,13 +609,14 @@ with tab2:
         if st.button("🔄 Start Over — Generate New Report", key="restart"):
             st.session_state["report_ready"] = False
             st.session_state["form_data"] = None
+            st.session_state["active_tab"] = "profile"
             st.session_state.pop("profile_result", None)
             st.rerun()
 
 # ═══════════════════════════════════════════════════════
 # TAB 3 — ABOUT
 # ═══════════════════════════════════════════════════════
-with tab3:
+if st.session_state["active_tab"] == "about":
     st.markdown("""
     <div class="card">
         <div class="card-header">
