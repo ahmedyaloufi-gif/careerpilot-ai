@@ -35,9 +35,7 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
-# ── Sidebar toggle button in main area ───────────────────────────────────────
-if "sidebar_visible" not in st.session_state:
-    st.session_state["sidebar_visible"] = True
+
 # ── CSS ───────────────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
@@ -46,7 +44,18 @@ st.markdown("""
 * { box-sizing: border-box; }
 html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
 .stApp { background-color: #F7F8FA; }
-#MainMenu, footer, header { visibility: hidden; }
+#MainMenu, footer { visibility: hidden; }
+header { visibility: hidden; }
+/* Always show the sidebar collapse/expand toggle arrow */
+[data-testid="collapsedControl"] {
+    visibility: visible !important;
+    display: flex !important;
+    opacity: 1 !important;
+    position: fixed !important;
+    top: 0.5rem !important;
+    left: 0 !important;
+    z-index: 999999 !important;
+}
 .block-container { padding: 0 2rem 2rem 2rem !important; max-width: 1200px; }
 
 [data-testid="stSidebar"] { background: #0F1117 !important; border-right: 1px solid #1E2130; }
@@ -129,32 +138,7 @@ div[data-testid="stHorizontalBlock"] label { color: #374151 !important; }
 [data-testid="stFileUploader"] { border:2px dashed #E2E8F0 !important; border-radius:12px !important; background:#FAFAFA !important; }
 hr { border:none; border-top:1px solid #F1F5F9; margin:1.5rem 0; }
 .stSuccess, .stInfo, .stWarning, .stError { border-radius:10px !important; font-size:0.85rem !important; }
-/* ── Always show sidebar toggle arrow ── */
-[data-testid="collapsedControl"] {
-    display: flex !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    position: fixed !important;
-    top: 1rem !important;
-    left: 0.5rem !important;
-    z-index: 999999 !important;
-    background: #0F172A !important;
-    border-radius: 0 8px 8px 0 !important;
-    padding: 8px 6px !important;
-    box-shadow: 2px 2px 8px rgba(0,0,0,0.3) !important;
-}
-
-[data-testid="collapsedControl"] svg {
-    fill: #FFFFFF !important;
-    color: #FFFFFF !important;
-}
-
-/* Make sure sidebar expand button always visible */
-section[data-testid="stSidebar"][aria-expanded="false"] {
-    display: block !important;
-    width: 0px !important;
-}
-            </style>
+</style>
 """, unsafe_allow_html=True)
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -340,29 +324,6 @@ st.markdown("""
     </div>
     <div style="font-size:0.875rem;color:#64748B;margin-top:4px">
         Fill in your profile and let AI agents build your personalized career plan
-    </div>
-</div>
-""", unsafe_allow_html=True)
-st.markdown("""
-<div style="padding:2rem 0 1rem 0;">
-    <div style="font-family:'Space Grotesk',sans-serif;font-size:1.75rem;font-weight:700;color:#0F172A;letter-spacing:-0.5px">
-        Career Development Report
-    </div>
-    <div style="font-size:0.875rem;color:#64748B;margin-top:4px">
-        Fill in your profile and let AI agents build your personalized career plan
-    </div>
-</div>
-""", unsafe_allow_html=True)
-
-# ── Floating sidebar toggle button ───────────────────────────────────────────
-st.markdown("""
-<div style="position:fixed;bottom:1.5rem;right:1.5rem;z-index:9999">
-    <div style="background:#0F172A;color:#FFFFFF;border-radius:50px;padding:10px 18px;
-                font-size:0.8rem;font-weight:600;cursor:pointer;
-                box-shadow:0 4px 12px rgba(0,0,0,0.3);
-                display:flex;align-items:center;gap:8px"
-         onclick="document.querySelector('[data-testid=collapsedControl]')?.click()">
-        ☰ Menu
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -604,10 +565,10 @@ elif st.session_state["active_tab"] == "report":
 
         # ── Run agents — only if not already run (persistence) ──
 
-        # ── Agent 1: Profile Analyzer ──────────────────────
+        # ── 1: Profile Analyzer ──────────────────────────────
         if agent_plan["profile"][0]:
             if "profile" not in results:
-                with st.spinner("🔍 Agent 1: Analyzing your profile..."):
+                with st.spinner("🔍 Analyzing your profile..."):
                     try:
                         r = run_agent(profile_analyzer, app_name, user_id, "s001", masked_profile)
                         results["profile"] = r
@@ -616,10 +577,10 @@ elif st.session_state["active_tab"] == "report":
                         st.error(f"Profile analysis failed: {e}"); st.stop()
             render_result("🔍", "Profile Analysis", results["profile"])
 
-        # ── Agent 2: Resume Agent ───────────────────────────
+        # ── 2: Resume Agent ───────────────────────────────────
         if agent_plan["resume"][0]:
             if "resume" not in results:
-                with st.spinner("📄 Agent 2: Reviewing resume..."):
+                with st.spinner("📄 Reviewing your resume..."):
                     try:
                         cv_section = f"\nCV: {masked_cv}" if masked_cv else "\nNo CV — give general advice."
                         r = run_agent(resume_agent, app_name, user_id, "s003",
@@ -633,10 +594,10 @@ elif st.session_state["active_tab"] == "report":
         else:
             st.info(f"📄 Resume Agent: {agent_plan['resume'][1]}")
 
-        # ── Agent 3: Project Generator ──────────────────────
+        # ── 3: Project Generator ──────────────────────────────
         if agent_plan["projects"][0]:
             if "projects" not in results:
-                with st.spinner("💡 Agent 3: Generating project ideas..."):
+                with st.spinner("💡 Generating project ideas..."):
                     try:
                         r = run_agent(project_generator, app_name, user_id, "s004",
                             f"Profile: {masked_profile}\nAnalysis: {results.get('profile','')}\nSuggest 3 projects for {fd['career_goal']}.")
@@ -649,10 +610,10 @@ elif st.session_state["active_tab"] == "report":
         else:
             st.info(f"💡 Project Generator: {agent_plan['projects'][1]}")
 
-        # ── Agent 4: Interview Agent ────────────────────────
+        # ── 4: Interview Agent ────────────────────────────────
         if agent_plan["interview"][0]:
             if "interview" not in results:
-                with st.spinner("🎤 Agent 4: Generating interview guide..."):
+                with st.spinner("🎤 Generating interview guide..."):
                     try:
                         r = run_agent(interview_agent, app_name, user_id, "s005",
                             f"Profile: {masked_profile}\nAnalysis: {results.get('profile','')}\nTarget: {fd['career_goal']}\nGenerate interview guide.")
@@ -663,10 +624,10 @@ elif st.session_state["active_tab"] == "report":
             if "interview" in results:
                 render_result("🎤", "Interview Preparation", results["interview"])
 
-        # ── Agent 5: Career Planner ─────────────────────────
+        # ── 5: Career Planner ────────────────────────────────
         if agent_plan["career"][0]:
             if "career" not in results:
-                with st.spinner("🗺️ Agent 5: Building career roadmap..."):
+                with st.spinner("🗺️ Building career roadmap..."):
                     try:
                         r = run_agent(career_planner, app_name, user_id, "s002",
                             f"Profile: {masked_profile}\nAnalysis: {results.get('profile','')}\nCreate roadmap.")
@@ -677,10 +638,10 @@ elif st.session_state["active_tab"] == "report":
             if "career" in results:
                 render_result("🗺️", "Career Roadmap", results["career"])
 
-        # ── Agent 6: Learning Agent ─────────────────────────
+        # ── 6: Learning Agent ─────────────────────────────────
         if agent_plan["learning"][0]:
             if "learning" not in results:
-                with st.spinner("📚 Agent 6: Building learning plan..."):
+                with st.spinner("📚 Building learning plan..."):
                     try:
                         r = run_agent(learning_agent, app_name, user_id, "s006",
                             f"Profile: {masked_profile}\nSkill gaps: {results.get('profile','')}\nTarget: {fd['career_goal']}\nBuild learning plan with real GitHub links.")
