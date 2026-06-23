@@ -35,7 +35,9 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
-
+# ── Sidebar toggle button in main area ───────────────────────────────────────
+if "sidebar_visible" not in st.session_state:
+    st.session_state["sidebar_visible"] = True
 # ── CSS ───────────────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
@@ -127,7 +129,32 @@ div[data-testid="stHorizontalBlock"] label { color: #374151 !important; }
 [data-testid="stFileUploader"] { border:2px dashed #E2E8F0 !important; border-radius:12px !important; background:#FAFAFA !important; }
 hr { border:none; border-top:1px solid #F1F5F9; margin:1.5rem 0; }
 .stSuccess, .stInfo, .stWarning, .stError { border-radius:10px !important; font-size:0.85rem !important; }
-</style>
+/* ── Always show sidebar toggle arrow ── */
+[data-testid="collapsedControl"] {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: fixed !important;
+    top: 1rem !important;
+    left: 0.5rem !important;
+    z-index: 999999 !important;
+    background: #0F172A !important;
+    border-radius: 0 8px 8px 0 !important;
+    padding: 8px 6px !important;
+    box-shadow: 2px 2px 8px rgba(0,0,0,0.3) !important;
+}
+
+[data-testid="collapsedControl"] svg {
+    fill: #FFFFFF !important;
+    color: #FFFFFF !important;
+}
+
+/* Make sure sidebar expand button always visible */
+section[data-testid="stSidebar"][aria-expanded="false"] {
+    display: block !important;
+    width: 0px !important;
+}
+            </style>
 """, unsafe_allow_html=True)
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -313,6 +340,29 @@ st.markdown("""
     </div>
     <div style="font-size:0.875rem;color:#64748B;margin-top:4px">
         Fill in your profile and let AI agents build your personalized career plan
+    </div>
+</div>
+""", unsafe_allow_html=True)
+st.markdown("""
+<div style="padding:2rem 0 1rem 0;">
+    <div style="font-family:'Space Grotesk',sans-serif;font-size:1.75rem;font-weight:700;color:#0F172A;letter-spacing:-0.5px">
+        Career Development Report
+    </div>
+    <div style="font-size:0.875rem;color:#64748B;margin-top:4px">
+        Fill in your profile and let AI agents build your personalized career plan
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+# ── Floating sidebar toggle button ───────────────────────────────────────────
+st.markdown("""
+<div style="position:fixed;bottom:1.5rem;right:1.5rem;z-index:9999">
+    <div style="background:#0F172A;color:#FFFFFF;border-radius:50px;padding:10px 18px;
+                font-size:0.8rem;font-weight:600;cursor:pointer;
+                box-shadow:0 4px 12px rgba(0,0,0,0.3);
+                display:flex;align-items:center;gap:8px"
+         onclick="document.querySelector('[data-testid=collapsedControl]')?.click()">
+        ☰ Menu
     </div>
 </div>
 """, unsafe_allow_html=True)
