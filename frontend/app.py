@@ -556,10 +556,10 @@ elif st.session_state["active_tab"] == "report":
 
         # ── Run agents — only if not already run (persistence) ──
 
-        # ── 1: Profile Analyzer ──────────────────────────────
+        # ── Agent 1: Profile Analyzer ──────────────────────
         if agent_plan["profile"][0]:
             if "profile" not in results:
-                with st.spinner("🔍 Analyzing your profile..."):
+                with st.spinner("🔍 Agent 1: Analyzing your profile..."):
                     try:
                         r = run_agent(profile_analyzer, app_name, user_id, "s001", masked_profile)
                         results["profile"] = r
@@ -568,10 +568,10 @@ elif st.session_state["active_tab"] == "report":
                         st.error(f"Profile analysis failed: {e}"); st.stop()
             render_result("🔍", "Profile Analysis", results["profile"])
 
-        # ── 2: Resume Agent ───────────────────────────────────
+        # ── Agent 2: Resume Agent ───────────────────────────
         if agent_plan["resume"][0]:
             if "resume" not in results:
-                with st.spinner("📄 Reviewing your resume..."):
+                with st.spinner("📄 Agent 2: Reviewing resume..."):
                     try:
                         cv_section = f"\nCV: {masked_cv}" if masked_cv else "\nNo CV — give general advice."
                         r = run_agent(resume_agent, app_name, user_id, "s003",
@@ -585,10 +585,10 @@ elif st.session_state["active_tab"] == "report":
         else:
             st.info(f"📄 Resume Agent: {agent_plan['resume'][1]}")
 
-        # ── 3: Project Generator ──────────────────────────────
+        # ── Agent 3: Project Generator ──────────────────────
         if agent_plan["projects"][0]:
             if "projects" not in results:
-                with st.spinner("💡 Generating project ideas..."):
+                with st.spinner("💡 Agent 3: Generating project ideas..."):
                     try:
                         r = run_agent(project_generator, app_name, user_id, "s004",
                             f"Profile: {masked_profile}\nAnalysis: {results.get('profile','')}\nSuggest 3 projects for {fd['career_goal']}.")
@@ -601,10 +601,10 @@ elif st.session_state["active_tab"] == "report":
         else:
             st.info(f"💡 Project Generator: {agent_plan['projects'][1]}")
 
-        # ── 4: Interview Agent ────────────────────────────────
+        # ── Agent 4: Interview Agent ────────────────────────
         if agent_plan["interview"][0]:
             if "interview" not in results:
-                with st.spinner("🎤 Generating interview guide..."):
+                with st.spinner("🎤 Agent 4: Generating interview guide..."):
                     try:
                         r = run_agent(interview_agent, app_name, user_id, "s005",
                             f"Profile: {masked_profile}\nAnalysis: {results.get('profile','')}\nTarget: {fd['career_goal']}\nGenerate interview guide.")
@@ -615,10 +615,10 @@ elif st.session_state["active_tab"] == "report":
             if "interview" in results:
                 render_result("🎤", "Interview Preparation", results["interview"])
 
-        # ── 5: Career Planner ────────────────────────────────
+        # ── Agent 5: Career Planner ─────────────────────────
         if agent_plan["career"][0]:
             if "career" not in results:
-                with st.spinner("🗺️ Building career roadmap..."):
+                with st.spinner("🗺️ Agent 5: Building career roadmap..."):
                     try:
                         r = run_agent(career_planner, app_name, user_id, "s002",
                             f"Profile: {masked_profile}\nAnalysis: {results.get('profile','')}\nCreate roadmap.")
@@ -629,10 +629,10 @@ elif st.session_state["active_tab"] == "report":
             if "career" in results:
                 render_result("🗺️", "Career Roadmap", results["career"])
 
-        # ── 6: Learning Agent ─────────────────────────────────
+        # ── Agent 6: Learning Agent ─────────────────────────
         if agent_plan["learning"][0]:
             if "learning" not in results:
-                with st.spinner("📚 Building learning plan..."):
+                with st.spinner("📚 Agent 6: Building learning plan..."):
                     try:
                         r = run_agent(learning_agent, app_name, user_id, "s006",
                             f"Profile: {masked_profile}\nSkill gaps: {results.get('profile','')}\nTarget: {fd['career_goal']}\nBuild learning plan with real GitHub links.")
@@ -644,7 +644,6 @@ elif st.session_state["active_tab"] == "report":
                 render_result("📚", "Personalized Learning Plan", results["learning"], make_links=True)
         else:
             st.info(f"📚 Learning Agent: {agent_plan['learning'][1]}")
-
         # ── Report complete banner ──
         if len(results) > 0:
             st.markdown("""
