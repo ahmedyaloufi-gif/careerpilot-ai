@@ -46,16 +46,7 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
 .stApp { background-color: #F7F8FA; }
 #MainMenu, footer { visibility: hidden; }
 header { visibility: hidden; }
-/* Always show the sidebar collapse/expand toggle arrow */
-[data-testid="collapsedControl"] {
-    visibility: visible !important;
-    display: flex !important;
-    opacity: 1 !important;
-    position: fixed !important;
-    top: 0.5rem !important;
-    left: 0 !important;
-    z-index: 999999 !important;
-}
+[data-testid="collapsedControl"] { visibility: visible !important; opacity: 1 !important; }
 .block-container { padding: 0 2rem 2rem 2rem !important; max-width: 1200px; }
 
 [data-testid="stSidebar"] { background: #0F1117 !important; border-right: 1px solid #1E2130; }
