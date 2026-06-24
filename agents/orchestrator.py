@@ -13,7 +13,7 @@ from agents.career_planner import career_planner
 # ── Orchestrator Agent ───────────────────────────────────────────────────────
 orchestrator = Agent(
     name="CareerPilot_Orchestrator",
-    model="gemini-2.5-flash",
+    model="gemini-2.5-flash-lite",
     description="Main orchestrator for CareerPilot AI.",
     instruction="""
     You are the CareerPilot AI Orchestrator.
